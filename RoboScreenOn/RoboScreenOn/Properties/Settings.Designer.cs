@@ -25,7 +25,7 @@ namespace RoboScreenOn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        [global::System.Configuration.DefaultSettingValueAttribute("01")]
         public string cbExecutar {
             get {
                 return ((string)(this["cbExecutar"]));
@@ -56,6 +56,30 @@ namespace RoboScreenOn.Properties {
             }
             set {
                 this["chbIniciarComWin"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string dateInicio {
+            get {
+                return ((string)(this["dateInicio"]));
+            }
+            set {
+                this["dateInicio"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string dateFim {
+            get {
+                return ((string)(this["dateFim"]));
+            }
+            set {
+                this["dateFim"] = value;
             }
         }
     }

@@ -1,25 +1,16 @@
-﻿using MetroFramework.Forms;
+﻿using MetroFramework;
+using MetroFramework.Forms;
+using RoboScreenOn.BLL.Enum;
 using RoboScreenOn.BLL.Utils.Auxiliar;
-using RoboScreenOn.BLL;
+using RoboScreenOn.BLL.Utils.ExtensionMethods;
+using RoboScreenOn.BLL.Utils.Singleton;
+using RoboScreenOn.Formularios.Configuracoes;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static RoboScreenOn.BLL.Utils.Singleton.MainInfo;
-using TasksPartialNameSpace = System.Threading.Tasks;
-using RoboScreenOn.BLL.Enum;
-using RoboScreenOn.BLL.Utils.Singleton;
-using Microsoft.Win32;
-using RoboScreenOn.BLL.Utils.ExtensionMethods;
-using RoboScreenOn.BLL.Utils;
-using System.Diagnostics;
-using RoboScreenOn.Formularios.Configuracoes;
 
 namespace RoboScreenOn
 {
@@ -79,12 +70,20 @@ namespace RoboScreenOn
             var task = Task.Factory.StartNew(() =>
             {
                 Invoke(new Processar(() =>
-                {   
-                    timer1.Interval = 1000;
-                    timer1.Enabled = true;
-                    btnParar.Enabled = true;
-                    btnIniciar.Enabled = false;
-                    MainInfo.FCInfo().EscreverConsoleLog("Iniciar...", TipoConsoleLog.Info);
+                {
+                    if (TimeSpan.Parse(dateTimePicker1.Text) > TimeSpan.Parse(dateTimePicker2.Text))
+                    {
+                        MetroMessageBox.Show(this, "Inicio de stop não pode ser maior que o Fim!");
+                    }
+                    else
+                    {
+                        timer1.Interval = 1000;
+                        timer1.Enabled = true;
+                        btnParar.Enabled = true;
+                        btnIniciar.Enabled = false;
+                        MainInfo.FCInfo().EscreverConsoleLog("Iniciar...", TipoConsoleLog.Info);
+                    }
+
                 }));
 
             });
@@ -110,35 +109,52 @@ namespace RoboScreenOn
         #region Configuração TimerTick
         private void IniciarTimer(object sender, EventArgs e)
         {
-            string hora = DateTime.Now.ToString("HH:mm:ss");
-            horaAtual = TimeSpan.Parse(hora);
-            if (horaAtual < dtInicio || horaAtual > dtFim)
-                LoopTimer();
-            else
-                MainInfo.FCInfo().EscreverConsoleLog($"Sistema pausado, retorno as {dtFim}", TipoConsoleLog.Info);
+
+            try
+            {
+                string hora = DateTime.Now.ToString("HH:mm:ss");
+                horaAtual = TimeSpan.Parse(hora);
+                if (horaAtual < dtInicio || horaAtual > dtFim)
+                    LoopTimer();
+                else
+                    MainInfo.FCInfo().EscreverConsoleLog($"Sistema pausado, retorno as {dtFim}", TipoConsoleLog.Info);
+            }
+            catch (Exception ex)
+            {
+                EscreverConsoleLog(ex.Message, TipoConsoleLog.Erro, false, MethodBase.GetCurrentMethod().Name, ex);
+            }
         }
 
         private void LoopTimer()
         {
-            if (MainInfo.FCInfo().MousePosition == Cursor.Position && MainInfo.FCInfo().KeyPressPass == MainInfo.FCInfo().KeyPress)
-            {
-                if (Properties.Settings.Default.chbTipoClick)
-                    SendKeys.SendWait("^");
-                else
-                    AutMouseClick.MouseClick(Cursor.Position.X, Cursor.Position.Y);
 
-                timer1.Interval = MainInfo.FCInfo().Timer == 0 ? 60000 : MainInfo.FCInfo().Timer;
-                lblTimeProximaExecucao.Text = $"{DateTime.Now.CalcularProximaExecucao(string.IsNullOrEmpty(Properties.Settings.Default.cbExecutar) ? 01 : Convert.ToInt32(Properties.Settings.Default.cbExecutar))}";
-                MainInfo.FCInfo().EscreverConsoleLog("Executado com Sucesso!", TipoConsoleLog.Info);
-            }
-            else
+            try
             {
-                timer1.Interval = MainInfo.FCInfo().Timer == 0 ? 60000 : MainInfo.FCInfo().Timer;
-                lblTimeProximaExecucao.Text = $"{DateTime.Now.CalcularProximaExecucao(string.IsNullOrEmpty(Properties.Settings.Default.cbExecutar) ? 01 : Convert.ToInt32(Properties.Settings.Default.cbExecutar))}";
-                MainInfo.FCInfo().EscreverConsoleLog("Execução não necessaria!", TipoConsoleLog.Info);
+                if (MainInfo.FCInfo().MousePosition == Cursor.Position && MainInfo.FCInfo().KeyPressPass == MainInfo.FCInfo().KeyPress)
+                {
+                    if (Properties.Settings.Default.chbTipoClick)
+                        SendKeys.SendWait("^");
+                    else
+                        AutMouseClick.MouseClick(Cursor.Position.X, Cursor.Position.Y);
+
+                    timer1.Interval = MainInfo.FCInfo().Timer == 0 ? 60000 : MainInfo.FCInfo().Timer;
+                    lblTimeProximaExecucao.Text = $"{DateTime.Now.CalcularProximaExecucao(string.IsNullOrEmpty(Properties.Settings.Default.cbExecutar) ? 01 : Convert.ToInt32(Properties.Settings.Default.cbExecutar))}";
+                    MainInfo.FCInfo().EscreverConsoleLog("Executado com Sucesso!", TipoConsoleLog.Info);
+                }
+                else
+                {
+                    timer1.Interval = MainInfo.FCInfo().Timer == 0 ? 60000 : MainInfo.FCInfo().Timer;
+                    lblTimeProximaExecucao.Text = $"{DateTime.Now.CalcularProximaExecucao(string.IsNullOrEmpty(Properties.Settings.Default.cbExecutar) ? 01 : Convert.ToInt32(Properties.Settings.Default.cbExecutar))}";
+                    MainInfo.FCInfo().EscreverConsoleLog("Execução não necessaria!", TipoConsoleLog.Info);
+                }
+                MainInfo.FCInfo().MousePosition = Cursor.Position;
+                MainInfo.FCInfo().KeyPressPass = MainInfo.FCInfo().KeyPress;
             }
-            MainInfo.FCInfo().MousePosition = Cursor.Position;
-            MainInfo.FCInfo().KeyPressPass = MainInfo.FCInfo().KeyPress;
+            catch (Exception ex)
+            {
+
+                EscreverConsoleLog(ex.Message, TipoConsoleLog.Erro, false, MethodBase.GetCurrentMethod().Name, ex);
+            }
 
         }
         #endregion
@@ -151,8 +167,8 @@ namespace RoboScreenOn
             timer1.Tick += IniciarTimer;
             notifyIcon1.MouseDoubleClick += ExibirNotifyIcon;
             btnConfigurarSistema.Click += ConfigurarSistema;
-            dateTimePicker1.ValueChanged += ValidaTempoPausa;
-            dateTimePicker2.ValueChanged += ValidaTempoPausa;
+            dateTimePicker1.ValueChanged += ValidaTempoInicio;
+            dateTimePicker2.ValueChanged += ValidaTempoFim;
         }
         #endregion
 
@@ -225,15 +241,23 @@ namespace RoboScreenOn
         private void CarregaDataPausa()
         {
             ConfiguraDateTimePicker();
-            dateTimePicker1.Text = "00:00:00";
-            dateTimePicker2.Text = "00:00:00";
-            
+            string horaInicio = Properties.Settings.Default.dateInicio;
+            string horaFim = Properties.Settings.Default.dateFim;
+            dateTimePicker1.Text = string.IsNullOrEmpty(horaInicio) ? "00:00:00" : horaInicio;
+            dateTimePicker2.Text = string.IsNullOrEmpty(horaFim) ? "00:00:00" : horaFim;
         }
 
-        private void ValidaTempoPausa(object sender, EventArgs e)
+        private void ValidaTempoInicio(object sender, EventArgs e)
         {
             dtInicio = TimeSpan.Parse(dateTimePicker1.Text);
+            Properties.Settings.Default.dateInicio = dateTimePicker1.Text;
+            Properties.Settings.Default.Save();
+        }
+        private void ValidaTempoFim(object sender, EventArgs e)
+        {
             dtFim = TimeSpan.Parse(dateTimePicker2.Text);
+            Properties.Settings.Default.dateFim = dateTimePicker2.Text;
+            Properties.Settings.Default.Save();
         }
         #endregion
     }
